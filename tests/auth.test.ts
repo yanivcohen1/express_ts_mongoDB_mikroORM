@@ -194,3 +194,17 @@ describe('Auth routes', () => {
     });
   });
 });
+
+describe('Public routes', () => {
+  it('returns healthy status without auth', async () => {
+    const response = await request(app)
+      .get('/health')
+      .expect(200);
+
+    expect(response.body).toEqual(
+      expect.objectContaining({
+        status: 'ok'
+      })
+    );
+  });
+});
