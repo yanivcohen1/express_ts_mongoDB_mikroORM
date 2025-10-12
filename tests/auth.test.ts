@@ -1,22 +1,35 @@
 import request from 'supertest';
 import app from '../src/app';
 
-const VALID_USERNAME = process.env.AUTH_USERNAME ?? 'tester';
-const VALID_PASSWORD = process.env.AUTH_PASSWORD ?? 'secret-password';
+const ADMIN_USERNAME = process.env.AUTH_ADMIN_USERNAME ?? 'admin';
+const ADMIN_PASSWORD = process.env.AUTH_ADMIN_PASSWORD ?? 'admin-secret';
+
+const USER_USERNAME = process.env.AUTH_USER_USERNAME ?? 'user';
+const USER_PASSWORD = process.env.AUTH_USER_PASSWORD ?? 'user-secret';
+
+async function login(username: string, password: string): Promise<{ token: string; role: string }> {
+  const response = await request(app)
+    .post('/auth/login')
+    .send({ username, password })
+    .expect(200);
+
+  return { token: response.body.token, role: response.body.role };
+}
 
 describe('Auth routes', () => {
   describe('POST /auth/login', () => {
     it('returns a JWT when credentials are valid', async () => {
       const response = await request(app)
         .post('/auth/login')
-        .send({ username: VALID_USERNAME, password: VALID_PASSWORD })
+        .send({ username: USER_USERNAME, password: USER_PASSWORD })
         .expect(200);
 
       expect(response.body).toEqual(
         expect.objectContaining({
           token: expect.any(String),
           tokenType: 'Bearer',
-          expiresIn: 3600
+          expiresIn: 3600,
+          role: 'user'
         })
       );
       expect(response.body.token).not.toHaveLength(0);
@@ -38,7 +51,7 @@ describe('Auth routes', () => {
     it('validates request payload presence', async () => {
       const response = await request(app)
         .post('/auth/login')
-        .send({ username: VALID_USERNAME })
+        .send({ username: USER_USERNAME })
         .expect(400);
 
       expect(response.body).toEqual(
@@ -53,7 +66,7 @@ describe('Auth routes', () => {
     it('confirms a valid token', async () => {
       const loginResponse = await request(app)
         .post('/auth/login')
-        .send({ username: VALID_USERNAME, password: VALID_PASSWORD })
+        .send({ username: USER_USERNAME, password: USER_PASSWORD })
         .expect(200);
 
       const verifyResponse = await request(app)
@@ -64,7 +77,10 @@ describe('Auth routes', () => {
       expect(verifyResponse.body).toEqual(
         expect.objectContaining({
           valid: true,
-          payload: expect.any(Object)
+          payload: expect.objectContaining({
+            sub: USER_USERNAME,
+            role: 'user'
+          })
         })
       );
     });
@@ -91,6 +107,88 @@ describe('Auth routes', () => {
       expect(response.body).toEqual(
         expect.objectContaining({
           error: 'Token is required in request body.'
+        })
+      );
+    });
+  });
+
+  describe('Protected routes', () => {
+    it('allows user with user role to access user route', async () => {
+      const { token } = await login(USER_USERNAME, USER_PASSWORD);
+
+      const response = await request(app)
+        .get('/user/profile')
+        .set('Authorization', `Bearer ${token}`)
+        .expect(200);
+
+      expect(response.body).toEqual(
+        expect.objectContaining({
+          message: 'User profile data',
+          user: expect.objectContaining({
+            username: USER_USERNAME,
+            role: 'user'
+          })
+        })
+      );
+    });
+
+    it('blocks user token from accessing admin route', async () => {
+      const { token } = await login(USER_USERNAME, USER_PASSWORD);
+
+      const response = await request(app)
+        .get('/admin/dashboard')
+        .set('Authorization', `Bearer ${token}`)
+        .expect(403);
+
+      expect(response.body).toEqual(
+        expect.objectContaining({
+          error: 'Access restricted to admin role.'
+        })
+      );
+    });
+
+    it('allows admin role to access admin route', async () => {
+      const { token } = await login(ADMIN_USERNAME, ADMIN_PASSWORD);
+
+      const response = await request(app)
+        .get('/admin/dashboard')
+        .set('Authorization', `Bearer ${token}`)
+        .expect(200);
+
+      expect(response.body).toEqual(
+        expect.objectContaining({
+          message: 'Admin dashboard data',
+          user: expect.objectContaining({
+            username: ADMIN_USERNAME,
+            role: 'admin'
+          })
+        })
+      );
+    });
+
+    it('blocks admin role from accessing user route', async () => {
+      const { token } = await login(ADMIN_USERNAME, ADMIN_PASSWORD);
+
+      const response = await request(app)
+        .get('/user/profile')
+        .set('Authorization', `Bearer ${token}`)
+        .expect(403);
+
+      expect(response.body).toEqual(
+        expect.objectContaining({
+          error: 'Access restricted to user role.'
+        })
+      );
+    });
+
+    it('rejects requests without token', async () => {
+      const response = await request(app)
+        .get('/user/profile')
+        .expect(401);
+
+      expect(response.body).toEqual(
+        expect.objectContaining({
+          error: 'Authorization header missing or malformed.'
         })
       );
     });

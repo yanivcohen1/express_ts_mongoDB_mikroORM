@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction, Router } from 'express';
 import jwt from 'jsonwebtoken';
-import { env } from '../config/env';
+import { env, CredentialDefinition, UserRole } from '../config/env';
 import { HttpError } from '../errors/httpError';
 
 interface LoginRequestBody {
@@ -24,27 +24,24 @@ function parseCredentials(body: LoginRequestBody): { username: string; password:
   return { username, password };
 }
 
-function authorizeUser(username: string, password: string): void {
-  if (env.authUsername && env.authPassword) {
-    if (username !== env.authUsername || password !== env.authPassword) {
-      throw new HttpError(401, 'Invalid credentials.');
-    }
-    return;
-  }
+function authorizeUser(username: string, password: string): { username: string; role: UserRole } {
+  const match = env.credentials.find((credential: CredentialDefinition) => credential.username === username);
 
-  if (username !== 'admin' || password !== 'password') {
+  if (!match || match.password !== password) {
     throw new HttpError(401, 'Invalid credentials.');
   }
+
+  return { username: match.username, role: match.role };
 }
 
 authRouter.post('/login', (req: Request<unknown, unknown, LoginRequestBody>, res: Response, next: NextFunction) => {
   try {
     const { username, password } = parseCredentials(req.body);
-    authorizeUser(username, password);
+    const { username: canonicalUsername, role } = authorizeUser(username, password);
 
-    const token = jwt.sign({ sub: username }, env.jwtSecret, { expiresIn: '1h' });
+    const token = jwt.sign({ sub: canonicalUsername, role }, env.jwtSecret, { expiresIn: '1h' });
 
-    res.status(200).json({ token, tokenType: 'Bearer', expiresIn: 3600 });
+    res.status(200).json({ token, tokenType: 'Bearer', expiresIn: 3600, role });
   } catch (error) {
     next(error);
   }
