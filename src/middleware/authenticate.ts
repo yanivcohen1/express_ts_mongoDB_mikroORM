@@ -43,11 +43,7 @@ export function requireRole(role: UserRole) {
       return;
     }
 
-    if (req.user.role === 'admin') {
-        next();
-    }
-
-    if (req.user.role !== role) {
+    if (req.user.role !== role && req.user.role !== 'admin') {
       next(new HttpError(403, `Access restricted to ${role} role.`));
       return;
     }
