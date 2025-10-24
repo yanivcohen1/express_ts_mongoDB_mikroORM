@@ -40,9 +40,9 @@ authRouter.post('/login', async (req: Request<unknown, unknown, LoginRequestBody
     const { username, password } = parseCredentials(req.body);
     const { username: canonicalUsername, role } = await authorizeUser(username, password);
 
-    const access_token = jwt.sign({ sub: canonicalUsername, role }, env.jwtSecret, { expiresIn: '1h' });
+    const token = jwt.sign({ sub: canonicalUsername, role }, env.jwtSecret, { expiresIn: '1h' });
 
-    res.status(200).json({ access_token, tokenType: 'Bearer', expiresIn: 3600, role });
+    res.status(200).json({ token, tokenType: 'Bearer', expiresIn: 3600, role });
   } catch (error) {
     next(error);
   }

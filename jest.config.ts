@@ -7,7 +7,8 @@ const config: Config = {
   moduleFileExtensions: ['ts', 'tsx', 'js', 'json'],
   collectCoverageFrom: ['src/**/*.ts'],
   coveragePathIgnorePatterns: ['/node_modules/', '/dist/'],
-  setupFiles: ['dotenv/config', '<rootDir>/tests/setup-env.ts']
+  setupFiles: ['dotenv/config', '<rootDir>/tests/mongo-setup.ts'],
+  setupFilesAfterEnv: ['<rootDir>/tests/setup-env.ts']
 };
 
 export default config;
