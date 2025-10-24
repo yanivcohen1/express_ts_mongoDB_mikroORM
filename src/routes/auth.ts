@@ -1,7 +1,8 @@
 import { Request, Response, NextFunction, Router } from 'express';
 import jwt from 'jsonwebtoken';
-import { env, CredentialDefinition, UserRole } from '../config/env';
+import { env, UserRole } from '../config/env';
 import { HttpError } from '../errors/httpError';
+import { User } from '../models/User';
 
 interface LoginRequestBody {
   username?: unknown;
@@ -24,24 +25,24 @@ function parseCredentials(body: LoginRequestBody): { username: string; password:
   return { username, password };
 }
 
-function authorizeUser(username: string, password: string): { username: string; role: UserRole } {
-  const match = env.credentials.find((credential: CredentialDefinition) => credential.username === username);
+async function authorizeUser(username: string, password: string): Promise<{ username: string; role: UserRole }> {
+  const user = await User.findOne({ username, password });
 
-  if (!match || match.password !== password) {
+  if (!user) {
     throw new HttpError(401, 'Invalid credentials.');
   }
 
-  return { username: match.username, role: match.role };
+  return { username: user.username, role: user.role };
 }
 
-authRouter.post('/login', (req: Request<unknown, unknown, LoginRequestBody>, res: Response, next: NextFunction) => {
+authRouter.post('/login', async (req: Request<unknown, unknown, LoginRequestBody>, res: Response, next: NextFunction) => {
   try {
     const { username, password } = parseCredentials(req.body);
-    const { username: canonicalUsername, role } = authorizeUser(username, password);
+    const { username: canonicalUsername, role } = await authorizeUser(username, password);
 
-    const token = jwt.sign({ sub: canonicalUsername, role }, env.jwtSecret, { expiresIn: '1h' });
+    const access_token = jwt.sign({ sub: canonicalUsername, role }, env.jwtSecret, { expiresIn: '1h' });
 
-    res.status(200).json({ token, tokenType: 'Bearer', expiresIn: 3600, role });
+    res.status(200).json({ access_token, tokenType: 'Bearer', expiresIn: 3600, role });
   } catch (error) {
     next(error);
   }

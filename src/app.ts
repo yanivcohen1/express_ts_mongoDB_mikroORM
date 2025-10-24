@@ -1,22 +1,28 @@
 import express, { Request, Response } from 'express';
 import helmet from 'helmet';
+import cors from 'cors';
 import authRouter from './routes/auth';
 import { authenticate, requireRole } from './middleware/authenticate';
 import { errorHandler } from './middleware/errorHandler';
 import { HttpError } from './errors/httpError';
+import { env } from './config/env';
 
 const app = express();
 
 app.use(helmet());
+app.use(cors({
+  origin: env.corsAllowedOrigins,
+  credentials: true
+}));
 app.use(express.json());
 
-app.use('/auth', authRouter);
+app.use('/api/auth', authRouter);
 
-app.get('/health', (_req: Request, res: Response) => {
+app.get('/api/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok' });
 });
 
-app.get('/user/profile', authenticate, (req: Request, res: Response) => {
+app.get('/api/user/profile', authenticate, (req: Request, res: Response) => {
   if (req.user?.role !== 'user') {
     throw new HttpError(403, 'Access restricted to user role.');
   }
@@ -30,7 +36,7 @@ app.get('/user/profile', authenticate, (req: Request, res: Response) => {
   });
 });
 
-app.get('/admin/dashboard', authenticate, requireRole('admin'), (req: Request, res: Response) => {
+app.get('/api/admin/reports', authenticate, requireRole('admin'), (req: Request, res: Response) => {
   res.json({
     message: 'Admin dashboard data',
     user: {

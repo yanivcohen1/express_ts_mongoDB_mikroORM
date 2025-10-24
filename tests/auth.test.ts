@@ -9,7 +9,7 @@ const USER_PASSWORD = process.env.AUTH_USER_PASSWORD ?? 'user-secret';
 
 async function login(username: string, password: string): Promise<{ token: string; role: string }> {
   const response = await request(app)
-    .post('/auth/login')
+    .post('/api/auth/login')
     .send({ username, password })
     .expect(200);
 
@@ -17,10 +17,10 @@ async function login(username: string, password: string): Promise<{ token: strin
 }
 
 describe('Auth routes', () => {
-  describe('POST /auth/login', () => {
+  describe('POST /api/auth/login', () => {
     it('returns a JWT when credentials are valid', async () => {
       const response = await request(app)
-        .post('/auth/login')
+        .post('/api/auth/login')
         .send({ username: USER_USERNAME, password: USER_PASSWORD })
         .expect(200);
 
@@ -37,7 +37,7 @@ describe('Auth routes', () => {
 
     it('rejects invalid credentials', async () => {
       const response = await request(app)
-        .post('/auth/login')
+        .post('/api/auth/login')
         .send({ username: 'wrong', password: 'credentials' })
         .expect(401);
 
@@ -50,7 +50,7 @@ describe('Auth routes', () => {
 
     it('validates request payload presence', async () => {
       const response = await request(app)
-        .post('/auth/login')
+        .post('/api/auth/login')
         .send({ username: USER_USERNAME })
         .expect(400);
 
@@ -62,15 +62,15 @@ describe('Auth routes', () => {
     });
   });
 
-  describe('POST /auth/verify', () => {
+  describe('POST /api/auth/verify', () => {
     it('confirms a valid token', async () => {
       const loginResponse = await request(app)
-        .post('/auth/login')
+        .post('/api/auth/login')
         .send({ username: USER_USERNAME, password: USER_PASSWORD })
         .expect(200);
 
       const verifyResponse = await request(app)
-        .post('/auth/verify')
+        .post('/api/auth/verify')
         .send({ token: loginResponse.body.token })
         .expect(200);
 
@@ -87,7 +87,7 @@ describe('Auth routes', () => {
 
     it('rejects malformed tokens', async () => {
       const response = await request(app)
-        .post('/auth/verify')
+        .post('/api/auth/verify')
         .send({ token: 'not-a-valid-token' })
         .expect(401);
 
@@ -100,7 +100,7 @@ describe('Auth routes', () => {
 
     it('requires token in request body', async () => {
       const response = await request(app)
-        .post('/auth/verify')
+        .post('/api/auth/verify')
         .send({})
         .expect(400);
 
@@ -117,7 +117,7 @@ describe('Auth routes', () => {
       const { token } = await login(USER_USERNAME, USER_PASSWORD);
 
       const response = await request(app)
-        .get('/user/profile')
+        .get('/api/user/profile')
         .set('Authorization', `Bearer ${token}`)
         .expect(200);
 
@@ -136,7 +136,7 @@ describe('Auth routes', () => {
       const { token } = await login(USER_USERNAME, USER_PASSWORD);
 
       const response = await request(app)
-        .get('/admin/dashboard')
+        .get('/api/admin/reports')
         .set('Authorization', `Bearer ${token}`)
         .expect(403);
 
@@ -151,7 +151,7 @@ describe('Auth routes', () => {
       const { token } = await login(ADMIN_USERNAME, ADMIN_PASSWORD);
 
       const response = await request(app)
-        .get('/admin/dashboard')
+        .get('/api/admin/reports')
         .set('Authorization', `Bearer ${token}`)
         .expect(200);
 
@@ -170,7 +170,7 @@ describe('Auth routes', () => {
       const { token } = await login(ADMIN_USERNAME, ADMIN_PASSWORD);
 
       const response = await request(app)
-        .get('/user/profile')
+        .get('/api/user/profile')
         .set('Authorization', `Bearer ${token}`)
         .expect(403);
 
@@ -183,7 +183,7 @@ describe('Auth routes', () => {
 
     it('rejects requests without token', async () => {
       const response = await request(app)
-        .get('/user/profile')
+        .get('/api/user/profile')
         .expect(401);
 
       expect(response.body).toEqual(
@@ -198,7 +198,7 @@ describe('Auth routes', () => {
 describe('Public routes', () => {
   it('returns healthy status without auth', async () => {
     const response = await request(app)
-      .get('/health')
+      .get('/api/health')
       .expect(200);
 
     expect(response.body).toEqual(

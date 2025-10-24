@@ -1,6 +1,24 @@
-import dotenv from 'dotenv';
+import fs from 'fs';
+import path from 'path';
+import yaml from 'js-yaml';
 
-dotenv.config();
+interface Config {
+  Jwt: {
+    Key: string;
+  };
+  ConnectionStrings: {
+    MongoConnection: string;
+  };
+  Server: {
+    Urls: string;
+  };
+  Cors: {
+    AllowedOrigins: string;
+  };
+}
+
+const configPath = path.join(process.cwd(), 'appsettings.yml');
+const config: Config = yaml.load(fs.readFileSync(configPath, 'utf8')) as Config;
 
 export type UserRole = 'admin' | 'user';
 
@@ -10,7 +28,7 @@ export interface CredentialDefinition {
   role: UserRole;
 }
 
-const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_SECRET = config.Jwt.Key;
 
 const ADMIN_USERNAME = process.env.AUTH_ADMIN_USERNAME ?? process.env.AUTH_USERNAME;
 const ADMIN_PASSWORD = process.env.AUTH_ADMIN_PASSWORD ?? process.env.AUTH_PASSWORD;
@@ -18,9 +36,20 @@ const ADMIN_PASSWORD = process.env.AUTH_ADMIN_PASSWORD ?? process.env.AUTH_PASSW
 const USER_USERNAME = process.env.AUTH_USER_USERNAME;
 const USER_PASSWORD = process.env.AUTH_USER_PASSWORD;
 
+const MONGO_URI = config.ConnectionStrings.MongoConnection;
+const MONGO_DB = 'express_ts'; // hardcoded or from config?
+const MONGO_READ_ADMIN_USERNAME = process.env.MONGO_READ_ADMIN_USERNAME;
+const MONGO_READ_ADMIN_PASSWORD = process.env.MONGO_READ_ADMIN_PASSWORD;
+
 if (!JWT_SECRET) {
-  throw new Error('JWT_SECRET environment variable is required.');
+  throw new Error('JWT_SECRET is required.');
 }
+
+// Parse server URLs to get port
+const serverUrls = config.Server.Urls.split(';');
+const firstUrl = serverUrls[0];
+const url = new URL(firstUrl);
+const port = parseInt(url.port) || 3000; // default to 3000 if no port
 
 const credentialMap = new Map<string, CredentialDefinition>();
 
@@ -41,7 +70,12 @@ if (credentialMap.size === 0) {
 }
 
 export const env = {
-  port: Number(process.env.PORT) || 3000,
+  port,
   jwtSecret: JWT_SECRET,
-  credentials: Array.from(credentialMap.values())
+  credentials: Array.from(credentialMap.values()),
+  mongoUri: MONGO_URI,
+  mongoDb: MONGO_DB,
+  mongoReadAdminUsername: MONGO_READ_ADMIN_USERNAME,
+  mongoReadAdminPassword: MONGO_READ_ADMIN_PASSWORD,
+  corsAllowedOrigins: config.Cors.AllowedOrigins.split(',')
 };

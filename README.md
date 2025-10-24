@@ -1,16 +1,18 @@
 # Express + TypeScript Authorization API
 
-A minimal Express server written in TypeScript with dedicated routes for handling user authorization flows and JWT issuance.
+A minimal Express server written in TypeScript with dedicated routes for handling user authorization flows and JWT issuance, using MongoDB for user storage.
 
 ## Features
 
 - TypeScript-first Express setup with strict type checking.
-- `/auth/login` route validating credentials and returning a signed JWT with embedded role information.
+- MongoDB integration for user authentication.
+- `/auth/login` route validating credentials against MongoDB and returning a signed JWT with embedded role information.
 - `/auth/verify` route validating a provided JWT token.
 - Role-protected routes at `/user/profile` (user role) and `/admin/dashboard` (admin role).
-- Helmet and JSON body parsing configured out of the box.
+- Helmet, CORS, and JSON body parsing configured out of the box.
 - Centralized error handling with typed HTTP errors.
 - Health check endpoint at `/health`.
+- YAML-based configuration.
 
 ## Getting Started
 
@@ -18,6 +20,9 @@ A minimal Express server written in TypeScript with dedicated routes for handlin
 
 - Node.js 18+
 - npm 9+
+- MongoDB 3.6+ (tested with 3.6.23)
+
+**Note:** This application uses Mongoose 5.13.x for compatibility with MongoDB 3.6.23. Be aware that this version has known security vulnerabilities. For production use, consider upgrading to MongoDB 4.2+ and Mongoose 8.x.
 
 ### Installation
 
@@ -25,11 +30,37 @@ A minimal Express server written in TypeScript with dedicated routes for handlin
    ```powershell
    npm install
    ```
-2. Copy the example environment file and update values:
+
+2. Ensure MongoDB is running and accessible.
+
+3. Create users in MongoDB:
    ```powershell
-   Copy-Item .env.example .env
+   npx ts-node create-users.ts
    ```
-3. Edit `.env` and set a strong `JWT_SECRET`. Optionally override `AUTH_ADMIN_USERNAME` / `AUTH_ADMIN_PASSWORD` and `AUTH_USER_USERNAME` / `AUTH_USER_PASSWORD`.
+
+   This creates two users:
+   - Admin: `admin@example.com` / `Admin123!`
+   - User: `user@example.com` / `User123!`
+
+### Configuration
+
+The application uses `appsettings.yml` for configuration. The default configuration includes:
+
+```yaml
+Jwt:
+  Key: "your-super-secret-key-here-change-in-production"
+
+ConnectionStrings:
+  MongoConnection: "mongodb://localhost:27017/express_ts"
+
+Server:
+  Urls: "http://localhost:5000;https://localhost:5001"
+
+Cors:
+  AllowedOrigins: "http://localhost:3000,http://localhost:3001"
+```
+
+**Important:** Change the `Jwt.Key` to a strong secret in production.
 
 ### Development
 
@@ -37,7 +68,7 @@ A minimal Express server written in TypeScript with dedicated routes for handlin
 npm run dev
 ```
 
-The server starts with auto-reload at [http://localhost:3000](http://localhost:3000).
+The server starts with auto-reload at [http://localhost:5000](http://localhost:5000).
 
 ### Production Build
 
@@ -54,8 +85,8 @@ Request body:
 
 ```json
 {
-  "username": "admin",
-  "password": "password"
+  "username": "admin@example.com",
+  "password": "Admin123!"
 }
 ```
 
@@ -86,7 +117,7 @@ Response:
 {
   "valid": true,
   "payload": {
-    "sub": "admin",
+    "sub": "admin@example.com",
     "role": "admin",
     "iat": 0,
     "exp": 0
@@ -106,7 +137,7 @@ Response:
 {
   "message": "User profile data",
   "user": {
-    "username": "user",
+    "username": "user@example.com",
     "role": "user"
   }
 }
@@ -124,7 +155,7 @@ Response:
 {
   "message": "Admin dashboard data",
   "user": {
-    "username": "admin",
+    "username": "admin@example.com",
     "role": "admin"
   }
 }
@@ -132,10 +163,14 @@ Response:
 
 ## Testing the Endpoints
 
-With the server running, use your preferred HTTP client (Postman, curl, etc.) to send requests. Ensure the `Authorization` header uses `Bearer <token>` if you extend the app with protected routes.
+With the server running, use your preferred HTTP client (Postman, curl, etc.) to send requests. Ensure the `Authorization` header uses `Bearer <token>` for protected routes.
+
+The application supports CORS for the configured origins, allowing frontend applications to make requests from those domains.
 
 ## Next Steps
 
-- Replace demo credential validation with real user storage or identity provider integration.
+- Update `appsettings.yml` with production values (strong JWT key, production MongoDB connection).
 - Add refresh tokens and revoke logic.
 - Implement request logging and rate limiting.
+- Consider adding user registration endpoints if needed.
+- Add input validation and sanitization for enhanced security.
