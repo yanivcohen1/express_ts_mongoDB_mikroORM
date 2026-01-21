@@ -1,4 +1,4 @@
-# Express + TypeScript + MongoDB Authorization API
+# Express + TypeScript + MongoDB + MikroORM + Authorization API
 
 A minimal Express server written in TypeScript with dedicated routes for handling user authorization flows and JWT issuance, using MongoDB for user storage via MikroORM.
 
