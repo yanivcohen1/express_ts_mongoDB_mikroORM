@@ -8,11 +8,11 @@ process.env.PORT = process.env.PORT ?? '0';
 
 beforeAll(async () => {
   // Connect to the in-memory database
-  const { connectDatabase } = await import('../src/config/database');
+  const { connectDatabase } = await import('../src/config/database.ts');
   await connectDatabase();
 
   // Create test users
-  const { User } = await import('../src/models/User');
+  const { User } = await import('../src/models/User.ts');
 
   const users = [
     { username: process.env.AUTH_ADMIN_USERNAME, password: process.env.AUTH_ADMIN_PASSWORD, role: 'admin' as const },
@@ -35,7 +35,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   // Disconnect from database
-  const { disconnectDatabase } = await import('../src/config/database');
+  const { disconnectDatabase } = await import('../src/config/database.ts');
   await disconnectDatabase();
 
   // Mongo server cleanup is handled in mongo-setup.ts

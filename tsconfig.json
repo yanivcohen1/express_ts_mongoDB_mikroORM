@@ -4,14 +4,16 @@
     "module": "Node16",
     "moduleResolution": "node16",
     "outDir": "dist",
-    "rootDir": "src",
+    "rootDir": ".",
     "strict": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
-    "types": ["node", "jest"]
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "types": ["node", "vitest/globals"]
   },
-  "include": ["src"],
+  "include": ["src", "tests", "create-users.ts"],
   "exclude": ["node_modules", "dist"]
 }

@@ -2,6 +2,7 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 
 // Global variable to hold the server instance
 declare global {
+  // eslint-disable-next-line no-var
   var __MONGOSERVER__: MongoMemoryServer | undefined;
 }
 
