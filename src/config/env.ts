@@ -3,7 +3,8 @@ import path from 'path';
 import yaml from 'js-yaml';
 import dotenv from 'dotenv';
 
-dotenv.config();
+const nodeEnv = process.env.NODE_ENV || 'development';
+dotenv.config({ path: path.join(process.cwd(), `.env.${nodeEnv}`) });
 
 interface Config {
   Jwt: {
@@ -52,7 +53,9 @@ if (!JWT_SECRET) {
 const serverUrls = config.Server.Urls.split(';');
 const firstUrl = serverUrls[0];
 const url = new URL(firstUrl);
-const port = parseInt(url.port) || 3000; // default to 3000 if no port
+const port = process.env.PORT ? parseInt(process.env.PORT) : (parseInt(url.port) || 3000);
+
+const jwtTtl = process.env.JWT_ACCESS_TTL_SECONDS ? parseInt(process.env.JWT_ACCESS_TTL_SECONDS) : 3600;
 
 const credentialMap = new Map<string, CredentialDefinition>();
 
@@ -75,6 +78,7 @@ if (credentialMap.size === 0) {
 export const env = {
   port,
   jwtSecret: JWT_SECRET,
+  jwtTtl,
   credentials: Array.from(credentialMap.values()),
   mongoUri: MONGO_URI,
   mongoDb: MONGO_DB,

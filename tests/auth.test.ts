@@ -28,7 +28,7 @@ describe('Auth routes', () => {
         expect.objectContaining({
           access_token: expect.any(String),
           tokenType: 'Bearer',
-          expiresIn: 3600,
+          expiresIn: parseInt(process.env.JWT_ACCESS_TTL_SECONDS || '3600'),
           role: 'user'
         })
       );
