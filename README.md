@@ -33,12 +33,12 @@ A minimal Express server written in TypeScript with dedicated routes for handlin
 
 2. Ensure MongoDB is running and accessible.
 
-3. Create users in MongoDB:
+3. Seed the database with initial users:
    ```powershell
-   pnpm exec ts-node create-users.ts
+   pnpm seed:db
    ```
 
-   This creates two users:
+   By default, this creates two users (configurable via `.env`):
    - Admin: `admin@example.com` / `Admin123!`
    - User: `user@example.com` / `User123!`
 
@@ -82,6 +82,7 @@ pnpm start
 - `pnpm dev`: Start development server with auto-reload using `ts-node-dev`.
 - `pnpm build`: Compile the TypeScript code to JavaScript in the `dist` folder.
 - `pnpm start`: Run the compiled production server from the `dist` folder.
+- `pnpm seed:db`: Seed the database with default admin and user credentials.
 - `pnpm lint`: Run linting checks using ESLint and check types.
 - `pnpm test`: Run unit tests once using Vitest.
 - `pnpm test:watch`: Run unit tests in watch mode using Vitest.

@@ -4,6 +4,7 @@ import { RequestContext } from '@mikro-orm/core';
 import { env, UserRole } from '../config/env';
 import { HttpError } from '../errors/httpError';
 import { User } from '../models/User';
+import { comparePassword } from '../lib/password';
 
 
 interface LoginRequestBody {
@@ -29,9 +30,9 @@ function parseCredentials(body: LoginRequestBody): { username: string; password:
 
 async function authorizeUser(username: string, password: string): Promise<{ username: string; role: UserRole }> {
   const em = RequestContext.getEntityManager()!;
-  const user = await em.findOne(User, { username, password });
+  const user = await em.findOne(User, { username });
 
-  if (!user) {
+  if (!user || !(await comparePassword(password, user.password))) {
     throw new HttpError(401, 'Invalid credentials.');
   }
 

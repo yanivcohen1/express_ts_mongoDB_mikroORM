@@ -1,6 +1,9 @@
 import fs from 'fs';
 import path from 'path';
 import yaml from 'js-yaml';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 interface Config {
   Jwt: {

@@ -14,11 +14,14 @@ beforeAll(async () => {
 
   // Create test users
   const { User } = await import('../src/models/User.ts');
+  const { hashPassword } = await import('../src/lib/password.ts');
 
+  // Clear existing users to ensure a clean state
+  await em.nativeDelete(User, {});
 
   const users = [
-    { username: process.env.AUTH_ADMIN_USERNAME!, password: process.env.AUTH_ADMIN_PASSWORD!, role: 'admin' as const },
-    { username: process.env.AUTH_USER_USERNAME!, password: process.env.AUTH_USER_PASSWORD!, role: 'user' as const }
+    { username: process.env.AUTH_ADMIN_USERNAME!, password: await hashPassword(process.env.AUTH_ADMIN_PASSWORD!), role: 'admin' as const },
+    { username: process.env.AUTH_USER_USERNAME!, password: await hashPassword(process.env.AUTH_USER_PASSWORD!), role: 'user' as const }
   ];
 
   for (const userData of users) {
