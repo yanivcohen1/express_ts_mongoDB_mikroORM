@@ -44,31 +44,46 @@ A minimal Express server written in TypeScript with dedicated routes for handlin
 
 ### Configuration
 
-The application uses `appsettings.yml` for configuration. The default configuration includes:
+The application uses `appsettings.yml` for base configuration and environment-specific `.env` files for overrides.
 
-```yaml
-Jwt:
-  Key: "your-super-secret-key-here-change-in-production"
+#### Environments
 
-ConnectionStrings:
-  MongoConnection: "mongodb://localhost:27017/express_ts"
+The application supports multiple environments via the `NODE_ENV` environment variable:
+- **Development** (`NODE_ENV=development`): Default. Loads `.env.development`.
+- **Production** (`NODE_ENV=production`): Loads `.env.production`.
 
-Server:
-  Urls: "http://localhost:5000;https://localhost:5001"
+#### appsettings.yml (Base Settings)
 
-Cors:
-  AllowedOrigins: "http://localhost:3000,http://localhost:3001"
-```
+| Key | Description |
+|-----|-------------|
+| `Jwt.Key` | Secret key for signing JWT tokens. |
+| `ConnectionStrings.MongoConnection` | Default MongoDB connection string. |
+| `Server.Urls` | Semicolon-separated list of server URLs (used to derive default port). |
+| `Cors.AllowedOrigins` | Comma-separated list of allowed CORS origins. |
 
-**Important:** Change the `Jwt.Key` to a strong secret in production.
+#### Environment Parameters (.env files)
+
+The following parameters can be set in `.env.development` or `.env.production`:
+
+| Variable | Description |
+|----------|-------------|
+| `PORT` | Overrides the port derived from `Server.Urls`. |
+| `MONGO_URI` | Overrides `ConnectionStrings.MongoConnection`. |
+| `MONGO_DB` | Overrides the database name (extracted from URI by default). |
+| `JWT_ACCESS_TTL_SECONDS` | Token expiration time in seconds (default: 3600). |
+| `AUTH_ADMIN_USERNAME` | Admin username for seeding/authentication. |
+| `AUTH_ADMIN_PASSWORD` | Admin password for seeding/authentication. |
+| `AUTH_USER_USERNAME` | User username for seeding/authentication. |
+| `AUTH_USER_PASSWORD` | User password for seeding/authentication. |
+
+**Important:** Change the `Jwt.Key` in `appsettings.yml` (or provide an environment-specific override if implemented) to a strong secret in production.
 
 ### Development
 
 ```powershell
 pnpm dev
 ```
-
-The server starts with auto-reload at [http://localhost:5000](http://localhost:5000).
+By default, this runs in `development` mode using `.env.development`.
 
 ### Production Build
 
@@ -76,6 +91,7 @@ The server starts with auto-reload at [http://localhost:5000](http://localhost:5
 pnpm build
 pnpm start
 ```
+`pnpm start` runs in `production` mode using `.env.production`.
 
 ## Scripts
 
